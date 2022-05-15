@@ -1,0 +1,50 @@
+{
+  "pins" : [
+    {
+      "identity" : "combine-schedulers",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/combine-schedulers",
+      "state" : {
+        "revision" : "4cf088c29a20f52be0f2ca54992b492c54e0076b",
+        "version" : "0.5.3"
+      }
+    },
+    {
+      "identity" : "networkimage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/gonzalezreal/NetworkImage",
+      "state" : {
+        "revision" : "c97f83e771c95186af80ef6118f158852a9e54be",
+        "version" : "4.0.1"
+      }
+    },
+    {
+      "identity" : "swift-cmark",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-cmark.git",
+      "state" : {
+        "branch" : "gfm",
+        "revision" : "792c1c3326327515ce9bf64c44196b7f4daab9a6"
+      }
+    },
+    {
+      "identity" : "swift-markdown",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-markdown",
+      "state" : {
+        "branch" : "main",
+        "revision" : "36cf89e36e94b025dbe37d82fe2a7da3f39d4204"
+      }
+    },
+    {
+      "identity" : "xctest-dynamic-overlay",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
+      "state" : {
+        "revision" : "50a70a9d3583fe228ce672e8923010c8df2deddd",
+        "version" : "0.2.1"
+      }
+    }
+  ],
+  "version" : 2
+}
