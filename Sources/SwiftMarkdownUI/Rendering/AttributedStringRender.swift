@@ -15,19 +15,17 @@ struct AttributedStringRender: MarkupWalker {
     var result: AttributedString = AttributedString()
     
     mutating func visitBlockQuote(_ blockQuote: BlockQuote) {
-        result.append(renderBlockQuote(blockQuote, state: state)) }
-    mutating func visitCodeBlock(_ codeBlock: CodeBlock) { //TODO: renderCodeBlock
-        return defaultVisit(codeBlock) }
+        result.append(renderBlockQuote(blockQuote, state: state))}
+    mutating func visitCodeBlock(_ codeBlock: CodeBlock) {
+        result.append(renderCodeBlock(codeBlock, state: state))}
     mutating func visitCustomBlock(_ customBlock: CustomBlock) {
         return defaultVisit(customBlock) }
-    mutating func visitDocument(_ document: Document) {
-        return defaultVisit(document) }
     mutating func visitHeading(_ heading: Heading) {
         return defaultVisit(heading) }
     mutating func visitThematicBreak(_ thematicBreak: ThematicBreak) {
         return defaultVisit(thematicBreak) }
     mutating func visitHTMLBlock(_ html: HTMLBlock) {
-        return defaultVisit(html) }
+        result.append(renderHTMLBlock(html, state: state))}
     mutating func visitListItem(_ listItem: ListItem) {
         return defaultVisit(listItem) }
     mutating func visitOrderedList(_ orderedList: OrderedList) {
@@ -35,7 +33,7 @@ struct AttributedStringRender: MarkupWalker {
     mutating func visitUnorderedList(_ unorderedList: UnorderedList) {
         return defaultVisit(unorderedList) }
     mutating func visitParagraph(_ paragraph: Paragraph) {
-        return defaultVisit(paragraph) }
+        result.append(renderParagraph(paragraph, state: state))}
     mutating func visitBlockDirective(_ blockDirective: BlockDirective) {
         return defaultVisit(blockDirective) }
     mutating func visitInlineCode(_ inlineCode: InlineCode) {
@@ -72,6 +70,13 @@ struct AttributedStringRender: MarkupWalker {
         return defaultVisit(tableCell) }
     mutating func visitSymbolLink(_ symbolLink: SymbolLink) {
         return defaultVisit(symbolLink)}
+    mutating func visitDocument(_ document: Document) {
+        var attributedStringRender = AttributedStringRender(
+            environment: environment, state: state
+        )
+        attributedStringRender.visit(document)
+        result.append(attributedStringRender.result)
+    }
 }
 
 extension AttributedStringRender {
@@ -112,7 +117,14 @@ extension AttributedStringRender {
         var code = codeBlock.code.replacingOccurrences(of: "\n", with: String.lineSeparator)
         code.removeLast()
         
-        return renderParagraph(.init(InlineMarkup(codeBlock)), state: state)
+        return renderParagraph(.init([InlineCode(code)]), state: state)
+    }
+    
+    private func renderHTMLBlock(_ htmlBlock: HTMLBlock, state: State) -> AttributedString {
+        var html = htmlBlock.rawHTML.replacingOccurrences(of: "\n", with: String.lineSeparator)
+        html.removeLast()
+        
+        return renderParagraph(.init([InlineHTML(html)]), state: state)
     }
     
     private func renderInlines(_ inlines: [InlineMarkup], state: State) -> AttributedString {
@@ -171,7 +183,7 @@ extension AttributedStringRender {
     }
     
     private func paragraphStyle(state: State) -> NSParagraphStyle {
-        let pointSize = UIFont.preferredFont(forTextStyle: .body).pointSize
+        let pointSize = state.font.resolve(sizeCategory: environment.sizeCategory).pointSize
         let result = NSMutableParagraphStyle()
         result.setParagraphStyle(.default)
         result.baseWritingDirection = environment.baseWritingDirection
@@ -218,7 +230,7 @@ extension AttributedStringRender {
     }
     
     struct State {
-        var font: SwiftUI.Font
+        var font: MarkdownStyle.Font
         var foregroundColor: SwiftUI.Color
         var paragraphSpacing: CGFloat
         var headIndent: CGFloat = 0
@@ -242,7 +254,7 @@ extension AttributedStringRender {
     
     enum ParagraphEdit {
         case firstLineIndent(Int)
-        case listMarker(ListMarker, font: SwiftUI.Font)
+        case listMarker(ListMarker, font: MarkdownStyle.Font)
     }
 
     enum ListMarker {
