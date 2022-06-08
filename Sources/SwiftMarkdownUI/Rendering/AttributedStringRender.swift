@@ -18,20 +18,20 @@ struct AttributedStringRender: MarkupWalker {
         result.append(renderBlockQuote(blockQuote, state: state))}
     mutating func visitCodeBlock(_ codeBlock: CodeBlock) {
         result.append(renderCodeBlock(codeBlock, state: state))}
-    mutating func visitCustomBlock(_ customBlock: CustomBlock) {
-        return defaultVisit(customBlock) }
+    //mutating func visitCustomBlock(_ customBlock: CustomBlock) {
+    //    return defaultVisit(customBlock) }
     mutating func visitHeading(_ heading: Heading) {
-        return defaultVisit(heading) }
-    mutating func visitThematicBreak(_ thematicBreak: ThematicBreak) {
-        return defaultVisit(thematicBreak) }
+        result.append(renderHeading(heading, state: state))}
+    mutating func visitThematicBreak(_ thematicBreak: ThematicBreak) { ///Variable unused
+        result.append(renderThematicBreak(state: state))}
     mutating func visitHTMLBlock(_ html: HTMLBlock) {
         result.append(renderHTMLBlock(html, state: state))}
-    mutating func visitListItem(_ listItem: ListItem) {
-        return defaultVisit(listItem) }
+    //mutating func visitListItem(_ listItem: ListItem) {
+    //    return defaultVisit(listItem) }
     mutating func visitOrderedList(_ orderedList: OrderedList) {
         return defaultVisit(orderedList) }
     mutating func visitUnorderedList(_ unorderedList: UnorderedList) {
-        return defaultVisit(unorderedList) }
+        result.append(renderUnorderedList(unorderedList, state: state))}
     mutating func visitParagraph(_ paragraph: Paragraph) {
         result.append(renderParagraph(paragraph, state: state))}
     mutating func visitBlockDirective(_ blockDirective: BlockDirective) {
@@ -127,6 +127,85 @@ extension AttributedStringRender {
         return renderParagraph(.init([InlineHTML(html)]), state: state)
     }
     
+    private func renderUnorderedList(_ unorderedList: UnorderedList, state: State) -> AttributedString {
+        var result = AttributedString()
+        
+        var itemState = state
+        itemState.paragraphSpacing = environment.style.measurements.paragraphSpacing
+        itemState.headIndent += environment.style.measurements.headIndentStep
+        itemState.tabStops.append(
+              contentsOf: [
+                .init(
+                  textAlignment: .trailing(environment.baseWritingDirection),
+                  location: itemState.headIndent - environment.style.measurements.listMarkerSpacing
+                ),
+                .init(textAlignment: .natural, location: itemState.headIndent),
+              ]
+            )
+        itemState.setListMarker(nil)
+        
+        for item in unorderedList.listItems {
+            result.append(
+                renderListItem(
+                    item,
+                    listMarker: .disc,
+                    parentParagraphSpacing: state.paragraphSpacing,
+                    state: itemState
+                )
+            )
+        }
+        
+        result.append(string: .paragraphSeparator)
+        
+        return result
+    }
+    
+    private func renderOrderList(_ orderedList: OrderedList, state: State) -> AttributedString {
+        var result = AttributedString()
+        
+        let highestNumber = orderedList.childCount - 1
+        let headIndentStep = max(
+            environment.style.measurements.headIndentStep,
+            AttributedString("\(highestNumber)", attributes: .init([
+                .font : state.font.monospacedDigit().resolve(sizeCategory: environment.sizeCategory)
+            ]))
+        )
+    }
+    
+    private func renderListItem(
+        _ listItem: ListItem,
+        listMarker: ListMarker,
+        parentParagraphSpacing: CGFloat,
+        state: State
+    ) -> AttributedString {
+        var result = AttributedString()
+        
+        for (offset, block) in listItem.blockChildren.enumerated() {
+            var blockState = state
+            
+            
+            if offset == 0 {
+                blockState.setListMarker(listMarker)
+            } else {
+                blockState.addFirstLineIndent(2)
+            }
+            
+            if offset == listItem.childCount - 1 {
+                blockState.paragraphSpacing = max(parentParagraphSpacing, state.paragraphSpacing)
+            }
+            
+            var attributedStringRender = AttributedStringRender(
+                environment: environment, state: state
+            )
+            attributedStringRender.visit(block)
+            result.append(attributedStringRender.result)
+        }
+        
+        result.append(string: .paragraphSeparator)
+        
+        return result
+    }
+    
     private func renderInlines(_ inlines: [InlineMarkup], state: State) -> AttributedString {
         var result = AttributedString()
         
@@ -142,11 +221,47 @@ extension AttributedStringRender {
         return result
     }
     
-    private func renderParagraph(_ paragraph: Paragraph, state: State) -> AttributedString{
+    private func renderHeading(_ heading: Heading, state: State) -> AttributedString {
+        var result = renderParagraphEdits(state: state)
+        
+        var inlineState = state
+        inlineState.font = inlineState.font.bold().scale(
+          environment.style.measurements.headingScales[heading.level - 1]
+        )
+        
+        result.append(renderInlines(Array(heading.inlineChildren), state: state))
+        
+        var paragraphState = state
+        paragraphState.paragraphSpacing = environment.style.measurements.headingSpacing
+        
+        result.setAttributes(.init([.paragraphStyle : paragraphStyle(state: paragraphState)]))
+        
+        result.append(string: .paragraphSeparator)
+        
+        return result
+    }
+    
+    private func renderThematicBreak(state: State) -> AttributedString {
+        var result = renderParagraphEdits(state: state)
+        
+        result.append(AttributedString(.nbsp, attributes: .init([
+            .font : state.font.resolve(sizeCategory: environment.sizeCategory),
+            .strikethroughStyle : NSUnderlineStyle.single.rawValue,
+            .strikethroughColor : UIColor.separator
+        ])))
+        
+        result.setAttributes(.init([.paragraphStyle : paragraphStyle(state: state)]))
+        
+        result.append(string: .paragraphSeparator)
+        
+        return result
+    }
+    
+    private func renderParagraph(_ paragraph: Paragraph, state: State) -> AttributedString {
         var result = renderParagraphEdits(state: state)
         result.append(renderInlines(Array(paragraph.inlineChildren), state: state))
         
-        result.setAttributes(AttributeContainer([.paragraphStyle : paragraphStyle(state: state)]))
+            result.setAttributes(.init([.paragraphStyle : paragraphStyle(state: state)]))
         
         return result
     }
@@ -276,6 +391,17 @@ extension NSWritingDirection {
   }
 }
 
+extension AttributedString {
+  /// Returns the width of the string in `em` units.
+  fileprivate func em() -> CGFloat {
+    guard let font = attribute(.font, at: 0, effectiveRange: nil) as? PlatformFont
+    else {
+      fatalError("Font attribute not found!")
+    }
+      return self.size / font.pointSize
+  }
+}
+
 extension NSTextAlignment {
   fileprivate init(_ layoutDirection: LayoutDirection, _ textAlignment: TextAlignment) {
     switch (layoutDirection, textAlignment) {
@@ -291,6 +417,15 @@ extension NSTextAlignment {
       self = .natural
     }
   }
+    
+    fileprivate static func trailing(_ writingDirection: NSWritingDirection) -> NSTextAlignment {
+      switch writingDirection {
+      case .rightToLeft:
+        return .left
+      default:
+        return .right
+      }
+    }
 }
 
 extension String {
