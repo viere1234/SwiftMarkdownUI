@@ -29,7 +29,7 @@ public struct MarkdownView: View {
     }
     
     private struct ViewState {
-        var attributedString = NSAttributedString()
+        var attributedString = AttributedString()
         var hashValue: Int?
     }
 
@@ -92,10 +92,10 @@ public struct MarkdownView: View {
   }
 
   public var body: some View {
-      Text(AttributedString(self.viewState.attributedString))
+      Text(self.viewState.attributedString)
           .onReceive(self.viewStatePublisher) { viewState in
-        self.viewState = viewState
-      }
+              self.viewState = viewState
+          }
   }
 
   private func loadMarkdownImages(_ hashValue: Int) -> AnyPublisher<ViewState, Never> {
@@ -107,22 +107,22 @@ public struct MarkdownView: View {
     .receive(on: UIScheduler.shared)
     .eraseToAnyPublisher()
   }
-
-  private func renderAttributedString(_ hashValue: Int) -> AnyPublisher<ViewState, Never> {
-    self.storage.document.renderAttributedString(
-      environment: .init(
-        baseURL: self.baseURL,
-        layoutDirection: self.layoutDirection,
-        alignment: self.textAlignment,
-        lineSpacing: self.lineSpacing,
-        sizeCategory: self.sizeCategory,
-        style: self.style
-      ),
-      imageHandlers: self.imageHandlers
-    )
-    .map { ViewState(attributedString: $0, hashValue: hashValue) }
-    .receive(on: UIScheduler.shared)
-    .eraseToAnyPublisher()
+    
+    private func renderAttributedString(_ hashValue: Int) -> AnyPublisher<ViewState, Never> {
+        self.storage.document.renderAttributedString(
+            environment: .init(
+                baseURL: self.baseURL,
+                layoutDirection: self.layoutDirection,
+                alignment: self.textAlignment,
+                lineSpacing: self.lineSpacing,
+                sizeCategory: self.sizeCategory,
+                style: self.style
+            ),
+            imageHandlers: self.imageHandlers
+        )
+        .map { ViewState(attributedString: $0, hashValue: hashValue) }
+        .receive(on: UIScheduler.shared)
+        .eraseToAnyPublisher()
   }
 }
 

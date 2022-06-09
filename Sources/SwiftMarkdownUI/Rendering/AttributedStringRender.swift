@@ -1,5 +1,5 @@
 //
-//  AttributedStringRenderer.swift
+//  AttributedStringRender.swift
 //  
 //
 //  Created by 張智堯 on 2022/5/15.
@@ -10,54 +10,158 @@ import Markdown
 import SwiftUI
 
 struct AttributedStringRender: MarkupWalker {
-    let environment: Environment
-    var state: State
     var result: AttributedString = AttributedString()
     
+    private let environment: Environment
+    private let state: State
+    private let hasSuccessor: Bool?
+    private let childCount: Int
+    private var offset = 0
+    
+    init(_ environment: Environment, hasSuccessor: Bool, state: State) {
+        self.environment = environment
+        self.hasSuccessor = hasSuccessor
+        self.state = state
+        self.childCount = -1
+    }
+    init(_ environment: Environment, childCount: Int, state: State) {
+        self.environment = environment
+        self.childCount = childCount
+        self.state = state
+        self.hasSuccessor = nil
+    }
+    init(_ environment: Environment, state: State) {
+        self.environment = environment
+        self.state = state
+        self.hasSuccessor = nil
+        self.childCount = -1
+    }
+    
     mutating func visitBlockQuote(_ blockQuote: BlockQuote) {
-        result.append(renderBlockQuote(blockQuote, state: state))}
+        result.append(
+            renderBlockQuote(
+                blockQuote,
+                hasSuccessor: hasSuccessor ?? (offset < childCount - 1),
+                state: state
+            )
+        )
+        if hasSuccessor == nil { offset += 1 }
+    }
     mutating func visitCodeBlock(_ codeBlock: CodeBlock) {
-        result.append(renderCodeBlock(codeBlock, state: state))}
-    //mutating func visitCustomBlock(_ customBlock: CustomBlock) {
-    //    return defaultVisit(customBlock) }
+        result.append(
+            renderCodeBlock(
+                codeBlock,
+                hasSuccessor: hasSuccessor ?? (offset < childCount - 1),
+                state: state
+            )
+        )
+        if hasSuccessor == nil { offset += 1 }
+    }
     mutating func visitHeading(_ heading: Heading) {
-        result.append(renderHeading(heading, state: state))}
+        result.append(
+            renderHeading(
+                heading,
+                hasSuccessor: hasSuccessor ?? (offset < childCount - 1),
+                state: state
+            )
+        )
+        if hasSuccessor == nil { offset += 1 }
+    }
     mutating func visitThematicBreak(_ thematicBreak: ThematicBreak) { ///Variable unused
-        result.append(renderThematicBreak(state: state))}
+        result.append(
+            renderThematicBreak(
+                hasSuccessor: hasSuccessor ?? (offset < childCount - 1),
+                state: state
+            )
+        )
+        if hasSuccessor == nil { offset += 1 }
+    }
     mutating func visitHTMLBlock(_ html: HTMLBlock) {
-        result.append(renderHTMLBlock(html, state: state))}
-    //mutating func visitListItem(_ listItem: ListItem) {
-    //    return defaultVisit(listItem) }
+        result.append(
+            renderHTMLBlock(
+                html,
+                hasSuccessor: hasSuccessor ?? (offset < childCount - 1),
+                state: state
+            )
+        )
+        if hasSuccessor == nil { offset += 1 }
+    }
+    mutating func visitListItem(_ listItem: ListItem) {
+        return defaultVisit(listItem) }
     mutating func visitOrderedList(_ orderedList: OrderedList) {
-        return defaultVisit(orderedList) }
+        result.append(
+            renderOrderList(
+                orderedList,
+                hasSuccessor: hasSuccessor ?? (offset < childCount - 1),
+                state: state
+            )
+        )
+    }
     mutating func visitUnorderedList(_ unorderedList: UnorderedList) {
-        result.append(renderUnorderedList(unorderedList, state: state))}
+        result.append(
+            renderUnorderedList(
+                unorderedList,
+                hasSuccessor: hasSuccessor ?? (offset < childCount - 1),
+                state: state
+            )
+        )
+        if hasSuccessor == nil { offset += 1 }
+    }
     mutating func visitParagraph(_ paragraph: Paragraph) {
-        result.append(renderParagraph(paragraph, state: state))}
-    mutating func visitBlockDirective(_ blockDirective: BlockDirective) {
-        return defaultVisit(blockDirective) }
+        result.append(
+            renderParagraph(
+                paragraph,
+                hasSuccessor: hasSuccessor ?? (offset < childCount - 1),
+                state: state
+            )
+        )
+        if hasSuccessor == nil { offset += 1 }
+    }
+    //mutating func visitBlockDirective(_ blockDirective: BlockDirective) {
+    //    return defaultVisit(blockDirective) }
     mutating func visitInlineCode(_ inlineCode: InlineCode) {
-        return defaultVisit(inlineCode) }
-    mutating func visitCustomInline(_ customInline: CustomInline) {
-        return defaultVisit(customInline) }
+        result.append(renderInlineCode(inlineCode, state: state))
+        offset += 1
+    }
     mutating func visitEmphasis(_ emphasis: Emphasis) {
-        return defaultVisit(emphasis) }
+        result.append(renderEmphasis(emphasis, state: state))
+        offset += 1
+    }
     mutating func visitImage(_ image: Markdown.Image) {
-        return defaultVisit(image) }
+        result.append(renderImage(image, state: state))
+        offset += 1
+    }
     mutating func visitInlineHTML(_ inlineHTML: InlineHTML) {
-        return defaultVisit(inlineHTML) }
+        result.append(renderInlineHTML(inlineHTML, state: state))
+        offset += 1
+    }
     mutating func visitLineBreak(_ lineBreak: LineBreak) {
-        return defaultVisit(lineBreak) }
+        result.append(renderLineBreak(state: state))
+        offset += 1
+    }
     mutating func visitLink(_ link: Markdown.Link) {
-        return defaultVisit(link) }
+        result.append(renderLink(link, state: state))
+        offset += 1
+    }
     mutating func visitSoftBreak(_ softBreak: SoftBreak) {
-        return defaultVisit(softBreak) }
+        result.append(renderSoftBreak(state: state))
+        offset += 1
+    }
     mutating func visitStrong(_ strong: Strong) {
-        return defaultVisit(strong) }
+        result.append(renderStrong(strong, state: state))
+        offset += 1
+    }
     mutating func visitText(_ text: Markdown.Text) {
-        return defaultVisit(text) }
+        result.append(renderText(text.plainText, state: state))
+        offset += 1
+    }
+    
+    //TODO: Not Supported. Render plainText
     mutating func visitStrikethrough(_ strikethrough: Strikethrough) {
-        return defaultVisit(strikethrough) }
+        result.append(renderText(strikethrough.plainText, state: state))
+        offset += 1
+    }
+    /* Not Support Table yet
     mutating func visitTable(_ table: Table) {
         return defaultVisit(table) }
     mutating func visitTableHead(_ tableHead: Table.Head) {
@@ -68,19 +172,29 @@ struct AttributedStringRender: MarkupWalker {
         return defaultVisit(tableRow) }
     mutating func visitTableCell(_ tableCell: Table.Cell) {
         return defaultVisit(tableCell) }
-    mutating func visitSymbolLink(_ symbolLink: SymbolLink) {
-        return defaultVisit(symbolLink)}
+    */
+    
+    //mutating func visitSymbolLink(_ symbolLink: SymbolLink) {
+    //    return defaultVisit(symbolLink)}
+    
     mutating func visitDocument(_ document: Document) {
         var attributedStringRender = AttributedStringRender(
-            environment: environment, state: state
+            environment,
+            childCount: document.childCount,
+            state: state
         )
         attributedStringRender.visit(document)
         result.append(attributedStringRender.result)
     }
 }
 
+//Render block
 extension AttributedStringRender {
-    private func renderBlockQuote(_ blockQuote: BlockQuote, state: State) -> AttributedString {
+    private func renderBlockQuote(
+        _ blockQuote: BlockQuote,
+        hasSuccessor: Bool,
+        state: State
+    ) -> AttributedString {
         var result = AttributedString()
         var state = state
         state.font = state.font.italic()
@@ -91,21 +205,28 @@ extension AttributedStringRender {
         )
         state.addFirstLineIndent()
         
-        for markup in blockQuote.children {
+        for (offset, block) in blockQuote.blockChildren.enumerated() {
             var attributedStringRender = AttributedStringRender(
-                environment: environment,
+                environment,
+                hasSuccessor: offset < blockQuote.childCount - 1,
                 state: state
             )
-            attributedStringRender.visit(markup)
+            attributedStringRender.visit(block)
             result.append(attributedStringRender.result)
         }
         
-        result.append(string: .paragraphSeparator)
+        if hasSuccessor {
+            result.append(string: .paragraphSeparator)
+        }
         
         return result
     }
     
-    private func renderCodeBlock(_ codeBlock: CodeBlock, state: State) -> AttributedString {
+    private func renderCodeBlock(
+        _ codeBlock: CodeBlock,
+        hasSuccessor: Bool,
+        state: State
+    ) -> AttributedString {
         var state = state
         state.font = state.font.scale(environment.style.measurements.codeFontScale).monospaced()
         state.headIndent += environment.style.measurements.headIndentStep
@@ -117,17 +238,25 @@ extension AttributedStringRender {
         var code = codeBlock.code.replacingOccurrences(of: "\n", with: String.lineSeparator)
         code.removeLast()
         
-        return renderParagraph(.init([InlineCode(code)]), state: state)
+        return renderParagraph(.init([InlineCode(code)]), hasSuccessor: hasSuccessor,state: state)
     }
     
-    private func renderHTMLBlock(_ htmlBlock: HTMLBlock, state: State) -> AttributedString {
+    private func renderHTMLBlock(
+        _ htmlBlock: HTMLBlock,
+        hasSuccessor: Bool,
+        state: State
+    ) -> AttributedString {
         var html = htmlBlock.rawHTML.replacingOccurrences(of: "\n", with: String.lineSeparator)
         html.removeLast()
         
-        return renderParagraph(.init([InlineHTML(html)]), state: state)
+        return renderParagraph(.init([InlineHTML(html)]), hasSuccessor: hasSuccessor,state: state)
     }
     
-    private func renderUnorderedList(_ unorderedList: UnorderedList, state: State) -> AttributedString {
+    private func renderUnorderedList(
+        _ unorderedList: UnorderedList,
+        hasSuccessor: Bool,
+        state: State
+    ) -> AttributedString {
         var result = AttributedString()
         
         var itemState = state
@@ -144,38 +273,80 @@ extension AttributedStringRender {
             )
         itemState.setListMarker(nil)
         
-        for item in unorderedList.listItems {
+        for (offset, item) in unorderedList.listItems.enumerated() {
             result.append(
                 renderListItem(
                     item,
                     listMarker: .disc,
                     parentParagraphSpacing: state.paragraphSpacing,
+                    hasSuccessor: offset < unorderedList.childCount - 1,
                     state: itemState
                 )
             )
         }
         
-        result.append(string: .paragraphSeparator)
+        if hasSuccessor {
+            result.append(string: .paragraphSeparator)
+        }
         
         return result
     }
     
-    private func renderOrderList(_ orderedList: OrderedList, state: State) -> AttributedString {
+    private func renderOrderList(
+        _ orderedList: OrderedList,
+        hasSuccessor: Bool,
+        state: State
+    ) -> AttributedString {
         var result = AttributedString()
         
         let highestNumber = orderedList.childCount - 1
         let headIndentStep = max(
             environment.style.measurements.headIndentStep,
-            AttributedString("\(highestNumber)", attributes: .init([
-                .font : state.font.monospacedDigit().resolve(sizeCategory: environment.sizeCategory)
-            ]))
+            NSAttributedString(
+                string: "\(highestNumber)",
+                attributes: [
+                    .font : state.font.monospacedDigit().resolve(sizeCategory: environment.sizeCategory)
+                ]
+            ).em() + environment.style.measurements.listMarkerSpacing
         )
+        var itemState = state
+        itemState.paragraphSpacing = environment.style.measurements.paragraphSpacing
+        itemState.headIndent += headIndentStep
+        itemState.tabStops.append(
+            contentsOf: [
+                .init(
+                    textAlignment: .trailing(environment.baseWritingDirection),
+                    location: itemState.headIndent - environment.style.measurements.listMarkerSpacing
+                ),
+                .init(textAlignment: .natural, location: itemState.headIndent)
+            ]
+        )
+        itemState.setListMarker(nil)
+        
+        for (offset, item) in orderedList.listItems.enumerated() {
+            result.append(
+                renderListItem(
+                    item,
+                    listMarker: .decimal(offset),
+                    parentParagraphSpacing: state.paragraphSpacing,
+                    hasSuccessor: offset < orderedList.childCount - 1,
+                    state: itemState
+                )
+            )
+        }
+        
+        if hasSuccessor {
+            result.append(string: .paragraphSeparator)
+        }
+        
+        return result
     }
     
     private func renderListItem(
         _ listItem: ListItem,
         listMarker: ListMarker,
         parentParagraphSpacing: CGFloat,
+        hasSuccessor: Bool,
         state: State
     ) -> AttributedString {
         var result = AttributedString()
@@ -190,18 +361,22 @@ extension AttributedStringRender {
                 blockState.addFirstLineIndent(2)
             }
             
-            if offset == listItem.childCount - 1 {
+            if !hasSuccessor, offset == listItem.childCount - 1 {
                 blockState.paragraphSpacing = max(parentParagraphSpacing, state.paragraphSpacing)
             }
             
             var attributedStringRender = AttributedStringRender(
-                environment: environment, state: state
+                environment,
+                hasSuccessor: offset < listItem.childCount - 1,
+                state: blockState
             )
             attributedStringRender.visit(block)
             result.append(attributedStringRender.result)
         }
         
-        result.append(string: .paragraphSeparator)
+        if hasSuccessor {
+            result.append(string: .paragraphSeparator)
+        }
         
         return result
     }
@@ -210,10 +385,7 @@ extension AttributedStringRender {
         var result = AttributedString()
         
         for inline in inlines {
-            var attributedStringRender = AttributedStringRender(
-                environment: environment,
-                state: state
-            )
+            var attributedStringRender = AttributedStringRender(environment, state: state)
             attributedStringRender.visit(inline)
             result.append(attributedStringRender.result)
         }
@@ -221,7 +393,11 @@ extension AttributedStringRender {
         return result
     }
     
-    private func renderHeading(_ heading: Heading, state: State) -> AttributedString {
+    private func renderHeading(
+        _ heading: Heading,
+        hasSuccessor: Bool,
+        state: State
+    ) -> AttributedString {
         var result = renderParagraphEdits(state: state)
         
         var inlineState = state
@@ -236,32 +412,48 @@ extension AttributedStringRender {
         
         result.setAttributes(.init([.paragraphStyle : paragraphStyle(state: paragraphState)]))
         
-        result.append(string: .paragraphSeparator)
+        if hasSuccessor {
+            result.append(string: .paragraphSeparator)
+        }
         
         return result
     }
     
-    private func renderThematicBreak(state: State) -> AttributedString {
+    private func renderThematicBreak(hasSuccessor: Bool ,state: State) -> AttributedString {
         var result = renderParagraphEdits(state: state)
         
-        result.append(AttributedString(.nbsp, attributes: .init([
-            .font : state.font.resolve(sizeCategory: environment.sizeCategory),
-            .strikethroughStyle : NSUnderlineStyle.single.rawValue,
-            .strikethroughColor : UIColor.separator
-        ])))
+        result.append(
+            AttributedString(
+                .nbsp,
+                attributes: .init([
+                    .font : state.font.resolve(sizeCategory: environment.sizeCategory),
+                    .strikethroughStyle : NSUnderlineStyle.single.rawValue,
+                    .strikethroughColor : UIColor.separator
+                ])
+            )
+        )
         
         result.setAttributes(.init([.paragraphStyle : paragraphStyle(state: state)]))
         
-        result.append(string: .paragraphSeparator)
+        if hasSuccessor {
+            result.append(string: .paragraphSeparator)
+        }
         
         return result
     }
     
-    private func renderParagraph(_ paragraph: Paragraph, state: State) -> AttributedString {
+    private func renderParagraph(
+        _ paragraph: Paragraph,
+        hasSuccessor: Bool,
+        state: State
+    ) -> AttributedString {
         var result = renderParagraphEdits(state: state)
         result.append(renderInlines(Array(paragraph.inlineChildren), state: state))
+        result.setAttributes(.init([.paragraphStyle : paragraphStyle(state: state)]))
         
-            result.setAttributes(.init([.paragraphStyle : paragraphStyle(state: state)]))
+        if hasSuccessor {
+            result.append(string: .paragraphSeparator)
+        }
         
         return result
     }
@@ -290,13 +482,6 @@ extension AttributedStringRender {
         return result
     }
     
-    private func renderText(_ text: String, state: State) -> AttributedString {
-        AttributedString(text, attributes: AttributeContainer([
-            .font: state.font,
-            .foregroundColor: state.foregroundColor
-        ]))
-    }
-    
     private func paragraphStyle(state: State) -> NSParagraphStyle {
         let pointSize = state.font.resolve(sizeCategory: environment.sizeCategory).pointSize
         let result = NSMutableParagraphStyle()
@@ -318,32 +503,90 @@ extension AttributedStringRender {
     }
 }
 
+//Render inline
 extension AttributedStringRender {
-    struct Environment: Hashable {
-        let baseURL: URL?
-        let baseWritingDirection: NSWritingDirection
-        let alignment: NSTextAlignment
-        let lineSpacing: CGFloat
-        let sizeCategory: ContentSizeCategory
-        let style: MarkdownStyle
-        
-        init(
-            baseURL: URL?,
-            layoutDirection: LayoutDirection,
-            alignment: TextAlignment,
-            lineSpacing: CGFloat,
-            sizeCategory: ContentSizeCategory,
-            style: MarkdownStyle
-        ) {
-            self.baseURL = baseURL
-            self.baseWritingDirection = .init(layoutDirection)
-            self.alignment = .init(layoutDirection, alignment)
-            self.lineSpacing = lineSpacing
-            self.sizeCategory = sizeCategory
-            self.style = style
-        }
+    private func renderText(_ text: String, state: State) -> AttributedString {
+        AttributedString(text, attributes: AttributeContainer([
+            .font: state.font,
+            .foregroundColor: state.foregroundColor
+        ]))
     }
     
+    private func renderSoftBreak(state: State) -> AttributedString {
+        renderText(" ", state: state)
+    }
+    
+    private func renderLineBreak(state: State) -> AttributedString {
+        renderText(.lineSeparator, state: state)
+    }
+    
+    private func renderInlineCode(_ inlineCode: InlineCode, state: State) -> AttributedString {
+        var state = state
+        state.font = state.font.scale(environment.style.measurements.codeFontScale).monospaced()
+        return renderText(inlineCode.code, state: state)
+    }
+    
+    private func renderInlineHTML(_ inlineHTML: InlineHTML, state: State) -> AttributedString {
+        renderText(inlineHTML.rawHTML, state: state)
+    }
+    
+    private func renderEmphasis(_ emphasis: Emphasis, state: State) -> AttributedString {
+        var result = AttributedString()
+        var state = state
+        state.font = state.font.italic()
+        
+        for inline in emphasis.inlineChildren {
+            var attributedStringRender = AttributedStringRender(environment, state: state)
+            attributedStringRender.visit(inline)
+            result.append(attributedStringRender.result)
+        }
+        
+        return result
+    }
+    
+    private func renderStrong(_ strong: Strong, state: State) -> AttributedString {
+        var result = AttributedString()
+        var state = state
+        state.font = state.font.bold()
+        
+        for inline in strong.inlineChildren {
+            var attributedStringRender = AttributedStringRender(environment, state: state)
+            attributedStringRender.visit(inline)
+            result.append(attributedStringRender.result)
+        }
+        
+        return result
+    }
+    
+    private func renderLink(_ link: Markdown.Link, state: State) -> AttributedString {
+        var result = AttributedString()
+        
+        for inline in link.inlineChildren {
+            var attributedStringRender = AttributedStringRender(environment, state: state)
+            attributedStringRender.visit(inline)
+            result.append(attributedStringRender.result)
+        }
+        
+        let absoluteURL = link.destination
+            .flatMap { URL(string: $0, relativeTo: environment.baseURL) }
+        
+        if let url = absoluteURL {
+            result.setAttributes(.init([.link : url]))
+        }
+        
+        return result
+    }
+    
+    private func renderImage(_ image: Markdown.Image, state: State) -> AttributedString {
+        image.source
+            .flatMap { URL(string: $0, relativeTo: environment.baseURL) }
+            .map {
+                AttributedString(NSAttributedString(markdownImageURL: $0))
+            } ?? AttributedString()
+    }
+}
+
+extension AttributedStringRender {
     struct State {
         var font: MarkdownStyle.Font
         var foregroundColor: SwiftUI.Color
@@ -378,53 +621,14 @@ extension AttributedStringRender {
     }
 }
 
-extension NSWritingDirection {
-  fileprivate init(_ layoutDirection: LayoutDirection) {
-    switch layoutDirection {
-    case .leftToRight:
-      self = .leftToRight
-    case .rightToLeft:
-      self = .rightToLeft
-    @unknown default:
-      self = .natural
-    }
-  }
-}
-
-extension AttributedString {
-  /// Returns the width of the string in `em` units.
-  fileprivate func em() -> CGFloat {
-    guard let font = attribute(.font, at: 0, effectiveRange: nil) as? PlatformFont
-    else {
-      fatalError("Font attribute not found!")
-    }
-      return self.size / font.pointSize
-  }
-}
-
 extension NSTextAlignment {
-  fileprivate init(_ layoutDirection: LayoutDirection, _ textAlignment: TextAlignment) {
-    switch (layoutDirection, textAlignment) {
-    case (_, .leading):
-      self = .natural
-    case (_, .center):
-      self = .center
-    case (.leftToRight, .trailing):
-      self = .right
-    case (.rightToLeft, .trailing):
-      self = .left
-    default:
-      self = .natural
-    }
-  }
-    
     fileprivate static func trailing(_ writingDirection: NSWritingDirection) -> NSTextAlignment {
-      switch writingDirection {
-      case .rightToLeft:
-        return .left
-      default:
-        return .right
-      }
+        switch writingDirection {
+        case .rightToLeft:
+            return .left
+        default:
+            return .right
+        }
     }
 }
 
@@ -438,4 +642,15 @@ extension AttributedString {
     fileprivate mutating func append(string: String) {
         self.append(AttributedString(string))
     }
+}
+
+extension NSAttributedString {
+  /// Returns the width of the string in `em` units.
+  fileprivate func em() -> CGFloat {
+    guard let font = attribute(.font, at: 0, effectiveRange: nil) as? PlatformFont
+    else {
+      fatalError("Font attribute not found!")
+    }
+    return size().width / font.pointSize
+  }
 }
