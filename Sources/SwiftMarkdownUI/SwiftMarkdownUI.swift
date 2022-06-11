@@ -1,14 +1,13 @@
+import AttributedText
 import Combine
 import CombineSchedulers
-import SwiftUI
 import Markdown
-import CryptoKit
+import SwiftUI
 
-
-public struct MarkdownView: View {
+public struct SwiftMarkdown: View {
     private enum Storage: Hashable {
-        static func == (lhs: MarkdownView.Storage, rhs: MarkdownView.Storage) -> Bool {
-            return lhs.document.isIdentical(to: rhs.document)
+        static func == (lhs: SwiftMarkdown.Storage, rhs: SwiftMarkdown.Storage) -> Bool {
+            lhs.document.isIdentical(to: rhs.document)
         }
         
         case markdown(String)
@@ -24,14 +23,14 @@ public struct MarkdownView: View {
         }
         
         var hashValue: Int {
-            return UUID().hashValue
+            self.document.debugDescription().hashValue
         }
     }
-    
-    private struct ViewState {
-        var attributedString = NSAttributedString()
-        var hashValue: Int?
-    }
+
+  private struct ViewState {
+    var attributedString = NSAttributedString()
+    var hashValue: Int?
+  }
 
   @Environment(\.layoutDirection) private var layoutDirection: LayoutDirection
   @Environment(\.multilineTextAlignment) private var textAlignment: TextAlignment
@@ -48,19 +47,21 @@ public struct MarkdownView: View {
 
   private var storage: Storage
   private var baseURL: URL?
-
+    
   public init(_ markdown: String, baseURL: URL? = nil) {
     self.storage = .markdown(markdown)
     self.baseURL = baseURL
   }
-
   public init(_ document: Document, baseURL: URL? = nil) {
     self.storage = .document(document)
     self.baseURL = baseURL
   }
+  public init(baseURL: URL? = nil, content: [BlockMarkup]) {
+    self.init(Document(content), baseURL: baseURL)
+  }
 
   private var viewStatePublisher: AnyPublisher<ViewState, Never> {
-      struct Input: Hashable {
+    struct Input: Hashable {
       let storage: Storage
       let environment: AttributedStringRenderer.Environment
     }
@@ -80,7 +81,7 @@ public struct MarkdownView: View {
       ).hashValue
     )
     .flatMap { hashValue -> AnyPublisher<ViewState, Never> in
-        if self.viewState.hashValue == hashValue, !viewState.attributedString.hasMarkdownImages {
+      if self.viewState.hashValue == hashValue, !viewState.attributedString.hasMarkdownImages {
         return Empty().eraseToAnyPublisher()
       } else if self.viewState.hashValue == hashValue {
         return self.loadMarkdownImages(hashValue)
@@ -92,10 +93,10 @@ public struct MarkdownView: View {
   }
 
   public var body: some View {
-      Text(.init(self.viewState.attributedString))
-          .onReceive(self.viewStatePublisher) { viewState in
-              self.viewState = viewState
-          }
+    AttributedText(self.viewState.attributedString, onOpenLink: openMarkdownLink?.handler)
+      .onReceive(self.viewStatePublisher) { viewState in
+        self.viewState = viewState
+      }
   }
 
   private func loadMarkdownImages(_ hashValue: Int) -> AnyPublisher<ViewState, Never> {
@@ -107,31 +108,30 @@ public struct MarkdownView: View {
     .receive(on: UIScheduler.shared)
     .eraseToAnyPublisher()
   }
-    
-    private func renderAttributedString(_ hashValue: Int) -> AnyPublisher<ViewState, Never> {
-        self.storage.document.renderAttributedString(
-            environment: .init(
-                baseURL: self.baseURL,
-                layoutDirection: self.layoutDirection,
-                alignment: self.textAlignment,
-                lineSpacing: self.lineSpacing,
-                sizeCategory: self.sizeCategory,
-                style: self.style
-            ),
-            imageHandlers: self.imageHandlers
-        )
-        .map { ViewState(attributedString: $0, hashValue: hashValue) }
-        .receive(on: UIScheduler.shared)
-        .eraseToAnyPublisher()
+
+  private func renderAttributedString(_ hashValue: Int) -> AnyPublisher<ViewState, Never> {
+    self.storage.document.renderAttributedString(
+      environment: .init(
+        baseURL: self.baseURL,
+        layoutDirection: self.layoutDirection,
+        alignment: self.textAlignment,
+        lineSpacing: self.lineSpacing,
+        sizeCategory: self.sizeCategory,
+        style: self.style
+      ),
+      imageHandlers: self.imageHandlers
+    )
+    .map { ViewState(attributedString: $0, hashValue: hashValue) }
+    .receive(on: UIScheduler.shared)
+    .eraseToAnyPublisher()
   }
 }
 
-extension MarkdownView {
-    
+extension SwiftMarkdown {
   public func setImageHandler(
     _ imageHandler: MarkdownImageHandler,
     forURLScheme urlScheme: String
-  ) -> MarkdownView {
+  ) -> SwiftMarkdown {
     var result = self
     result.imageHandlers[urlScheme] = imageHandler
 
@@ -140,35 +140,35 @@ extension MarkdownView {
 }
 
 extension View {
-  public func markdownStyle(_ markdownStyle: MarkdownStyle) -> some View {
-    environment(\.markdownStyle, markdownStyle)
-  }
-
-  public func onOpenMarkdownLink(perform action: ((URL) -> Void)? = nil) -> some View {
-    environment(\.openMarkdownLink, action.map(OpenMarkdownLinkAction.init(handler:)))
-  }
+    public func markdownStyle(_ markdownStyle: MarkdownStyle) -> some View {
+        environment(\.markdownStyle, markdownStyle)
+    }
+    
+    public func onOpenMarkdownLink(perform action: ((URL) -> Void)? = nil) -> some View {
+        environment(\.openMarkdownLink, action.map(OpenMarkdownLinkAction.init(handler:)))
+    }
 }
 
 extension EnvironmentValues {
-  fileprivate var markdownStyle: MarkdownStyle {
-    get { self[MarkdownStyleKey.self] }
-    set { self[MarkdownStyleKey.self] = newValue }
-  }
-
-  fileprivate var openMarkdownLink: OpenMarkdownLinkAction? {
-    get { self[OpenMarkdownLinkKey.self] }
-    set { self[OpenMarkdownLinkKey.self] = newValue }
-  }
+    fileprivate var markdownStyle: MarkdownStyle {
+        get { self[MarkdownStyleKey.self] }
+        set { self[MarkdownStyleKey.self] = newValue }
+    }
+    
+    fileprivate var openMarkdownLink: OpenMarkdownLinkAction? {
+        get { self[OpenMarkdownLinkKey.self] }
+        set { self[OpenMarkdownLinkKey.self] = newValue }
+    }
 }
 
 private struct MarkdownStyleKey: EnvironmentKey {
-  static let defaultValue = MarkdownStyle()
+    static let defaultValue = MarkdownStyle()
 }
 
 private struct OpenMarkdownLinkAction {
-  var handler: (URL) -> Void
+    var handler: (URL) -> Void
 }
 
 private struct OpenMarkdownLinkKey: EnvironmentKey {
-  static let defaultValue: OpenMarkdownLinkAction? = nil
+    static let defaultValue: OpenMarkdownLinkAction? = nil
 }
