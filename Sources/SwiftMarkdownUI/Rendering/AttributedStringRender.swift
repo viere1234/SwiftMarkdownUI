@@ -178,10 +178,6 @@ struct AttributedStringRender: MarkupWalker {
         result.append(renderSymbolLink(symbolLink, state: state))
         offset += 1
     }
-    
-    mutating func defaultVisit(_ markup: Markup) {
-        offset += 1
-    }
 }
 
 //Render block
