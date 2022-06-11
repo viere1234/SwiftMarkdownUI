@@ -8,7 +8,7 @@ import CryptoKit
 public struct MarkdownView: View {
     private enum Storage: Hashable {
         static func == (lhs: MarkdownView.Storage, rhs: MarkdownView.Storage) -> Bool {
-            return lhs.hashValue == rhs.hashValue
+            return lhs.document.isIdentical(to: rhs.document)
         }
         
         case markdown(String)
@@ -29,7 +29,7 @@ public struct MarkdownView: View {
     }
     
     private struct ViewState {
-        var attributedString = AttributedString()
+        var attributedString = NSAttributedString()
         var hashValue: Int?
     }
 
@@ -92,7 +92,7 @@ public struct MarkdownView: View {
   }
 
   public var body: some View {
-      Text(self.viewState.attributedString)
+      Text(.init(self.viewState.attributedString))
           .onReceive(self.viewStatePublisher) { viewState in
               self.viewState = viewState
           }

@@ -10,7 +10,7 @@ import Markdown
 import SwiftUI
 
 struct AttributedStringRender: MarkupWalker {
-    var result: AttributedString = AttributedString()
+    let result = NSMutableAttributedString()
     
     private let environment: Environment
     private let state: State
@@ -194,8 +194,8 @@ extension AttributedStringRender {
         _ blockQuote: BlockQuote,
         hasSuccessor: Bool,
         state: State
-    ) -> AttributedString {
-        var result = AttributedString()
+    ) -> NSAttributedString {
+        let result = NSMutableAttributedString()
         var state = state
         state.font = state.font.italic()
         state.headIndent += environment.style.measurements.headIndentStep
@@ -226,7 +226,7 @@ extension AttributedStringRender {
         _ codeBlock: CodeBlock,
         hasSuccessor: Bool,
         state: State
-    ) -> AttributedString {
+    ) -> NSAttributedString {
         var state = state
         state.font = state.font.scale(environment.style.measurements.codeFontScale).monospaced()
         state.headIndent += environment.style.measurements.headIndentStep
@@ -245,7 +245,7 @@ extension AttributedStringRender {
         _ htmlBlock: HTMLBlock,
         hasSuccessor: Bool,
         state: State
-    ) -> AttributedString {
+    ) -> NSAttributedString {
         var html = htmlBlock.rawHTML.replacingOccurrences(of: "\n", with: String.lineSeparator)
         html.removeLast()
         
@@ -256,8 +256,8 @@ extension AttributedStringRender {
         _ unorderedList: UnorderedList,
         hasSuccessor: Bool,
         state: State
-    ) -> AttributedString {
-        var result = AttributedString()
+    ) -> NSAttributedString {
+        let result = NSMutableAttributedString()
         
         var itemState = state
         itemState.paragraphSpacing = environment.style.measurements.paragraphSpacing
@@ -296,8 +296,8 @@ extension AttributedStringRender {
         _ orderedList: OrderedList,
         hasSuccessor: Bool,
         state: State
-    ) -> AttributedString {
-        var result = AttributedString()
+    ) -> NSAttributedString {
+        let result = NSMutableAttributedString()
         
         let highestNumber = orderedList.childCount - 1
         let headIndentStep = max(
@@ -348,8 +348,8 @@ extension AttributedStringRender {
         parentParagraphSpacing: CGFloat,
         hasSuccessor: Bool,
         state: State
-    ) -> AttributedString {
-        var result = AttributedString()
+    ) -> NSAttributedString {
+        let result = NSMutableAttributedString()
         
         for (offset, block) in listItem.blockChildren.enumerated() {
             var blockState = state
@@ -381,8 +381,8 @@ extension AttributedStringRender {
         return result
     }
     
-    private func renderInlines(_ inlines: [InlineMarkup], state: State) -> AttributedString {
-        var result = AttributedString()
+    private func renderInlines(_ inlines: [InlineMarkup], state: State) -> NSAttributedString {
+        let result = NSMutableAttributedString()
         
         for inline in inlines {
             var attributedStringRender = AttributedStringRender(environment, state: state)
@@ -397,8 +397,8 @@ extension AttributedStringRender {
         _ heading: Heading,
         hasSuccessor: Bool,
         state: State
-    ) -> AttributedString {
-        var result = renderParagraphEdits(state: state)
+    ) -> NSAttributedString {
+        let result = renderParagraphEdits(state: state)
         
         var inlineState = state
         inlineState.font = inlineState.font.bold().scale(
@@ -410,7 +410,11 @@ extension AttributedStringRender {
         var paragraphState = state
         paragraphState.paragraphSpacing = environment.style.measurements.headingSpacing
         
-        result.setAttributes(.init([.paragraphStyle : paragraphStyle(state: paragraphState)]))
+        result.addAttribute(
+            .paragraphStyle,
+            value: paragraphStyle(state: paragraphState),
+            range: NSRange(0..<result.length)
+        )
         
         if hasSuccessor {
             result.append(string: .paragraphSeparator)
@@ -419,21 +423,25 @@ extension AttributedStringRender {
         return result
     }
     
-    private func renderThematicBreak(hasSuccessor: Bool ,state: State) -> AttributedString {
-        var result = renderParagraphEdits(state: state)
+    private func renderThematicBreak(hasSuccessor: Bool ,state: State) -> NSAttributedString {
+        let result = renderParagraphEdits(state: state)
         
         result.append(
-            AttributedString(
-                .nbsp,
-                attributes: .init([
-                    .font : state.font.resolve(sizeCategory: environment.sizeCategory),
-                    .strikethroughStyle : NSUnderlineStyle.single.rawValue,
-                    .strikethroughColor : UIColor.separator
-                ])
+            .init(
+                string: .nbsp,
+                attributes: [
+                    .font: state.font.resolve(sizeCategory: environment.sizeCategory),
+                    .strikethroughStyle: NSUnderlineStyle.single.rawValue,
+                    .strikethroughColor: PlatformColor.separator,
+                ]
             )
         )
         
-        result.setAttributes(.init([.paragraphStyle : paragraphStyle(state: state)]))
+        result.addAttribute(
+            .paragraphStyle,
+            value: paragraphStyle(state: state),
+            range: NSRange(0..<result.length)
+        )
         
         if hasSuccessor {
             result.append(string: .paragraphSeparator)
@@ -446,10 +454,14 @@ extension AttributedStringRender {
         _ paragraph: Paragraph,
         hasSuccessor: Bool,
         state: State
-    ) -> AttributedString {
-        var result = renderParagraphEdits(state: state)
+    ) -> NSAttributedString {
+        let result = renderParagraphEdits(state: state)
         result.append(renderInlines(Array(paragraph.inlineChildren), state: state))
-        result.setAttributes(.init([.paragraphStyle : paragraphStyle(state: state)]))
+        result.addAttribute(
+            .paragraphStyle,
+            value: paragraphStyle(state: state),
+            range: NSRange(0..<result.length)
+        )
         
         if hasSuccessor {
             result.append(string: .paragraphSeparator)
@@ -458,13 +470,15 @@ extension AttributedStringRender {
         return result
     }
     
-    private func renderParagraphEdits(state: State) -> AttributedString {
-        var result = AttributedString()
+    private func renderParagraphEdits(state: State) -> NSMutableAttributedString {
+        let result = NSMutableAttributedString()
         
         for paragraphEdit in state.paragraphEdits {
             switch paragraphEdit {
             case .firstLineIndent(let count):
-                result.append(renderText(String(repeating: "\t", count: count), state: state))
+                result.append(
+                    renderText(.init(repeating: "\t", count: count), state: state)
+                )
             case .listMarker(let listMarker, let font):
                 switch listMarker {
                 case .disc:
@@ -505,33 +519,36 @@ extension AttributedStringRender {
 
 //Render inline
 extension AttributedStringRender {
-    private func renderText(_ text: String, state: State) -> AttributedString {
-        AttributedString(text, attributes: AttributeContainer([
-            .font: state.font,
-            .foregroundColor: state.foregroundColor
-        ]))
+    private func renderText(_ text: String, state: State) -> NSAttributedString {
+        NSAttributedString(
+            string: text,
+            attributes: [
+                .font: state.font.resolve(sizeCategory: environment.sizeCategory),
+                .foregroundColor: PlatformColor(state.foregroundColor)
+            ]
+        )
     }
     
-    private func renderSoftBreak(state: State) -> AttributedString {
+    private func renderSoftBreak(state: State) -> NSAttributedString {
         renderText(" ", state: state)
     }
     
-    private func renderLineBreak(state: State) -> AttributedString {
+    private func renderLineBreak(state: State) -> NSAttributedString {
         renderText(.lineSeparator, state: state)
     }
     
-    private func renderInlineCode(_ inlineCode: InlineCode, state: State) -> AttributedString {
+    private func renderInlineCode(_ inlineCode: InlineCode, state: State) -> NSAttributedString {
         var state = state
         state.font = state.font.scale(environment.style.measurements.codeFontScale).monospaced()
         return renderText(inlineCode.code, state: state)
     }
     
-    private func renderInlineHTML(_ inlineHTML: InlineHTML, state: State) -> AttributedString {
+    private func renderInlineHTML(_ inlineHTML: InlineHTML, state: State) -> NSAttributedString {
         renderText(inlineHTML.rawHTML, state: state)
     }
     
-    private func renderEmphasis(_ emphasis: Emphasis, state: State) -> AttributedString {
-        var result = AttributedString()
+    private func renderEmphasis(_ emphasis: Emphasis, state: State) -> NSAttributedString {
+        let result = NSMutableAttributedString()
         var state = state
         state.font = state.font.italic()
         
@@ -544,8 +561,8 @@ extension AttributedStringRender {
         return result
     }
     
-    private func renderStrong(_ strong: Strong, state: State) -> AttributedString {
-        var result = AttributedString()
+    private func renderStrong(_ strong: Strong, state: State) -> NSAttributedString {
+        let result = NSMutableAttributedString()
         var state = state
         state.font = state.font.bold()
         
@@ -558,8 +575,8 @@ extension AttributedStringRender {
         return result
     }
     
-    private func renderLink(_ link: Markdown.Link, state: State) -> AttributedString {
-        var result = AttributedString()
+    private func renderLink(_ link: Markdown.Link, state: State) -> NSAttributedString {
+        let result = NSMutableAttributedString()
         
         for inline in link.inlineChildren {
             var attributedStringRender = AttributedStringRender(environment, state: state)
@@ -571,18 +588,24 @@ extension AttributedStringRender {
             .flatMap { URL(string: $0, relativeTo: environment.baseURL) }
         
         if let url = absoluteURL {
-            result.setAttributes(.init([.link : url]))
+            result.addAttribute(NSAttributedString.Key.link, value: url, range: NSRange(0..<result.length))
         }
+        
+        #if os(macOS)
+        if let title = link.title {
+            result.addAttribute(.toolTip, value: title, range: NSRange(0..<result.length))
+        }
+        #endif
         
         return result
     }
     
-    private func renderImage(_ image: Markdown.Image, state: State) -> AttributedString {
+    private func renderImage(_ image: Markdown.Image, state: State) -> NSAttributedString {
         image.source
             .flatMap { URL(string: $0, relativeTo: environment.baseURL) }
             .map {
-                AttributedString(NSAttributedString(markdownImageURL: $0))
-            } ?? AttributedString()
+                NSAttributedString(markdownImageURL: $0)
+            } ?? NSAttributedString()
     }
 }
 
@@ -638,19 +661,35 @@ extension String {
     fileprivate static let nbsp = "\u{00A0}"
 }
 
-extension AttributedString {
-    fileprivate mutating func append(string: String) {
-        self.append(AttributedString(string))
+extension NSMutableAttributedString {
+    fileprivate func append(string: String) {
+        self.append(
+            .init(
+                string: string,
+                attributes: self.length > 0
+                ? self.attributes(at: self.length - 1, effectiveRange: nil) : nil
+            )
+        )
     }
 }
 
 extension NSAttributedString {
-  /// Returns the width of the string in `em` units.
-  fileprivate func em() -> CGFloat {
-    guard let font = attribute(.font, at: 0, effectiveRange: nil) as? PlatformFont
-    else {
-      fatalError("Font attribute not found!")
+    /// Returns the width of the string in `em` units.
+    fileprivate func em() -> CGFloat {
+        guard let font = attribute(.font, at: 0, effectiveRange: nil) as? PlatformFont
+        else { fatalError("Font attribute not found!") }
+        return size().width / font.pointSize
     }
-    return size().width / font.pointSize
-  }
 }
+
+// MARK: - PlatformColor
+
+#if os(macOS)
+private typealias PlatformColor = NSColor
+
+extension NSColor {
+    fileprivate static var separator: NSColor { .separatorColor }
+}
+#elseif os(iOS) || os(tvOS)
+private typealias PlatformColor = UIColor
+#endif

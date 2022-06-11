@@ -5,7 +5,7 @@ import SwiftUI
 extension Document {
     func renderAttributedString(
         environment: AttributedStringRender.Environment
-    ) -> AttributedString {
+    ) -> NSAttributedString {
         var attributedStringRender = AttributedStringRender(
             environment,
             state: .init(
@@ -21,11 +21,11 @@ extension Document {
   func renderAttributedString(
     environment: AttributedStringRender.Environment,
     imageHandlers: [String: MarkdownImageHandler]
-  ) -> AnyPublisher<AttributedString, Never> {
+  ) -> AnyPublisher<NSAttributedString, Never> {
       Deferred {
       Just(self.renderAttributedString(environment: environment))
     }
-    .flatMap { attributedString -> AnyPublisher<AttributedString, Never> in
+    .flatMap { attributedString -> AnyPublisher<NSAttributedString, Never> in
         guard attributedString.hasMarkdownImages else {
         return Just(attributedString).eraseToAnyPublisher()
       }
@@ -39,4 +39,3 @@ extension Document {
     .eraseToAnyPublisher()
   }
 }
-//
