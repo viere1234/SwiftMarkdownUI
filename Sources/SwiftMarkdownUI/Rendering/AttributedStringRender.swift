@@ -177,6 +177,7 @@ struct AttributedStringRender: MarkupWalker {
     //mutating func visitSymbolLink(_ symbolLink: SymbolLink) {
     //    return defaultVisit(symbolLink)}
     
+    /*
     mutating func visitDocument(_ document: Document) {
         var attributedStringRender = AttributedStringRender(
             environment,
@@ -186,6 +187,7 @@ struct AttributedStringRender: MarkupWalker {
         attributedStringRender.visit(document)
         result.append(attributedStringRender.result)
     }
+     */
 }
 
 //Render block
