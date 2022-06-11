@@ -7,7 +7,7 @@ import SwiftUI
 public struct SwiftMarkdown: View {
     private enum Storage: Hashable {
         static func == (lhs: SwiftMarkdown.Storage, rhs: SwiftMarkdown.Storage) -> Bool {
-            lhs.document.isIdentical(to: rhs.document)
+            lhs.hashValue == rhs.hashValue
         }
         
         case markdown(String)
