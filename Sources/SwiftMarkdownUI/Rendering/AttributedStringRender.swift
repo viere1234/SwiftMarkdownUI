@@ -174,20 +174,14 @@ struct AttributedStringRender: MarkupWalker {
         return defaultVisit(tableCell) }
     */
     
-    //mutating func visitSymbolLink(_ symbolLink: SymbolLink) {
-    //    return defaultVisit(symbolLink)}
-    
-    /*
-    mutating func visitDocument(_ document: Document) {
-        var attributedStringRender = AttributedStringRender(
-            environment,
-            childCount: document.childCount,
-            state: state
-        )
-        attributedStringRender.visit(document)
-        result.append(attributedStringRender.result)
+    mutating func visitSymbolLink(_ symbolLink: SymbolLink) {
+        result.append(renderSymbolLink(symbolLink, state: state))
+        offset += 1
     }
-     */
+    
+    mutating func defaultVisit(_ markup: Markup) {
+        offset += 1
+    }
 }
 
 //Render block
@@ -590,7 +584,7 @@ extension AttributedStringRender {
             .flatMap { URL(string: $0, relativeTo: environment.baseURL) }
         
         if let url = absoluteURL {
-            result.addAttribute(NSAttributedString.Key.link, value: url, range: NSRange(0..<result.length))
+            result.addAttribute(.link, value: url, range: NSRange(0..<result.length))
         }
         
         #if os(macOS)
@@ -598,6 +592,20 @@ extension AttributedStringRender {
             result.addAttribute(.toolTip, value: title, range: NSRange(0..<result.length))
         }
         #endif
+        
+        return result
+    }
+    
+    private func renderSymbolLink(_ symbolLink: SymbolLink, state: State) -> NSAttributedString {
+        let result = NSMutableAttributedString()
+        result.append(renderText(symbolLink.plainText, state: state))
+        
+        let absoluteURL = symbolLink.destination
+            .flatMap { URL(string: $0, relativeTo: environment.baseURL) }
+        
+        if let url = absoluteURL {
+            result.addAttribute(.link, value: url, range: NSRange(0..<result.length))
+        }
         
         return result
     }
