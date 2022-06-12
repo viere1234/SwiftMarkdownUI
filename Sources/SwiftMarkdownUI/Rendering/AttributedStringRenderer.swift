@@ -18,7 +18,7 @@ struct AttributedStringRenderer: MarkupWalker {
         var tailIndent: CGFloat = 0
         var tabStops: [NSTextTab] = []
         var paragraphEdits: [ParagraphEdit] = []
-        var strikethroughStyle: NSUnderlineStyle = .init(rawValue: 0x00)
+        //var strikethroughStyle: NSUnderlineStyle = .init(rawValue: 0x00)
 
         mutating func setListMarker(_ listMarker: ListMarker?) {
             // Replace any previous list marker by two indents
@@ -597,7 +597,7 @@ extension AttributedStringRenderer {
     
     private func renderStrikethrough(_ strikethrough: Strikethrough, state: State) -> NSAttributedString {
         var state = state
-        state.strikethroughStyle = .single
+        //state.strikethroughStyle = .single
         
         return renderInlines(strikethrough.inlineChildren, state: state)
     }
@@ -650,7 +650,7 @@ extension AttributedStringRenderer {
             attributes: [
                 .font: state.font.resolve(sizeCategory: environment.sizeCategory),
                 .foregroundColor: PlatformColor(state.foregroundColor),
-                .strikethroughStyle: state.strikethroughStyle
+                //.strikethroughStyle: state.strikethroughStyle
             ]
         )
     }
