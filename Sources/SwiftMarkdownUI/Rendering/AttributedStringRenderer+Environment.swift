@@ -1,3 +1,10 @@
+//
+//  AttributedStringRenderer+Environment.swift
+//  
+//
+//  Created by 張智堯 on 2022/6/9.
+//
+
 import SwiftUI
 
 extension AttributedStringRenderer {
@@ -56,3 +63,4 @@ extension NSTextAlignment {
     }
   }
 }
+

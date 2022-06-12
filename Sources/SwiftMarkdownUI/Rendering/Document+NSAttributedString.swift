@@ -4,9 +4,9 @@ import SwiftUI
 
 extension Document {
     func renderAttributedString(
-        environment: AttributedStringRender.Environment
+        environment: AttributedStringRenderer.Environment
     ) -> NSAttributedString {
-        var attributedStringRender = AttributedStringRender(
+        var attributedStringRenderer = AttributedStringRenderer(
             environment,
             state: .init(
                 font: environment.style.font,
@@ -14,12 +14,12 @@ extension Document {
                 paragraphSpacing: environment.style.measurements.paragraphSpacing
             )
         )
-        attributedStringRender.visit(self)
-        return attributedStringRender.result
+        attributedStringRenderer.visit(self)
+        return attributedStringRenderer.result
     }
 
   func renderAttributedString(
-    environment: AttributedStringRender.Environment,
+    environment: AttributedStringRenderer.Environment,
     imageHandlers: [String: MarkdownImageHandler]
   ) -> AnyPublisher<NSAttributedString, Never> {
       Deferred {
