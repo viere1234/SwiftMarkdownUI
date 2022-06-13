@@ -1,7 +1,6 @@
 # SwiftMarkdownUI
 
-SwiftMarkdownUI is a Swift package for rendering Markdown in SwiftUI, fork from [MarkdownUI](https://github.com/gonzalezreal/MarkdownUI) but fully compliant with the
-[Swift-Markdown]([https://spec.commonmark.org/current/](https://github.com/apple/swift-markdown)) powered by GitHub-flavored Markdown's [cmark-gfm](https://github.com/github/cmark-gfm).
+SwiftMarkdownUI is a Swift package for rendering Markdown in SwiftUI, fork from [MarkdownUI](https://github.com/gonzalezreal/MarkdownUI) but fully compliant with the [swift-markdown](https://github.com/apple/swift-markdown) powered by GitHub-flavored Markdown's [cmark-gfm](https://github.com/github/cmark-gfm).
 
 ## Supported Platforms
 
@@ -16,10 +15,8 @@ You can use MarkdownUI in the following platforms:
 You can create a `Markdown` view by providing a Markdown-formatted string.
 
 ```swift
-Markdown("You can try **CommonMark** [here](https://spec.commonmark.org/dingus/).")
+SwiftMarkdown("You can try **CommonMark** [here](https://spec.commonmark.org/dingus/).")
 ```
-
-![Markdown text](Images/MarkdownFormattedString.1.png)
 
 If you have already parsed a Markdown-formatted string into a CommonMark document, you can
 initialize a `Markdown` view with it.
@@ -30,14 +27,14 @@ let document = try! Document(
 )
 
 var body: some View {
-  Markdown(document)
+  SwiftMarkdown(document)
 }
 ```
 
 Alternatively, you can use an embedded DSL to describe the content of a Markdown view.
 
 ```swift
-Markdown {
+SwiftMarkdown {
   Heading(level: 2) {
     "Markdown lists"
   }
@@ -53,15 +50,13 @@ Markdown {
 }
 ```
 
-![Markdown embedded DSL](Images/BlockArrayBuilder.1.png)
-
 ### Relative URLs
 
 When creating a `Markdown` view, specify a base URL if you want to use relative URLs in your
 Markdown content.
 
 ```swift
-Markdown(
+SwiftMarkdown(
   #"""
   You can explore all the capabilities of this package in the
   [companion demo project](Examples/MarkdownUIDemo).
@@ -77,7 +72,7 @@ may want to store some of your content's images locally. In that case, you can c
 `Markdown` view to load images with a given URL scheme from the asset catalog.
 
 ```swift
-Markdown(
+SwiftMarkdown(
   #"""
   The Markdown view loads this image from the network:
   ![](https://picsum.photos/id/223/100/150)
@@ -96,7 +91,7 @@ for the current environment. You can customize some or all of these values by pa
 `MarkdownStyle` to the `markdownStyle(_:)` view modifier.
 
 ```swift
-Markdown(
+SwiftMarkdown(
   #"""
   ## Inline code
   If you have inline code blocks, wrap them in backticks: `var example = true`.
@@ -114,8 +109,6 @@ Markdown(
 )
 ```
 
-![Markdown style](Images/MarkdownStyle.1.png)
-
 ### Customizing link handling
 
 By default, a `Markdown` view opens the links in its content using the appropriate system service.
@@ -127,7 +120,7 @@ struct ContentView: View {
   @State private var showingAlert = false
 
   var body: some View {
-    Markdown(
+    SwiftMarkdown(
       #"""
       **MarkdownUI** is a library for rendering Markdown in *SwiftUI*, fully compliant with the
       [CommonMark Spec](https://spec.commonmark.org/current/).
@@ -151,7 +144,7 @@ Alternatively, if your deployment target is macOS 12.0+ or iOS 15.0+, you can cu
 link handling by setting the `openURL` environment value.
 
 ```swift
-Markdown(
+SwiftMarkdown(
   #"""
   **MarkdownUI** is a library for rendering Markdown in *SwiftUI*, fully compliant with the
   [CommonMark Spec](https://spec.commonmark.org/current/).
@@ -168,18 +161,12 @@ Markdown(
 ```
 
 ## Supported Markdown Elements
-MarkdownUI uses the [CommonMark](https://github.com/commonmark/cmark) reference parser and
-fully complies with the [CommonMark Spec](https://spec.commonmark.org/current/).
-
-Below you can see a few examples of how MarkdownUI renders Markdown elements. Additionally, you can
-explore the full MarkdownUI capabilities in the [companion demo project](Demo/).
-
-![Demo app screenshot](Demo/Screenshot.png)
+MarkdownUI uses the [swift-markdown](https://github.com/apple/swift-markdown) reference parser powered by GitHub-flavored Markdown's [cmark-gfm](https://github.com/github/cmark-gfm)
 
 ### Block Quotes
 
 ```swift
-Markdown(
+SwiftMarkdown(
   #"""
   > “I sent the club a wire stating,
   > **PLEASE ACCEPT MY RESIGNATION. I DON'T
@@ -190,12 +177,10 @@ Markdown(
 )
 ```
 
-![Block quotes](Images/BlockQuote.1.png)
-
 ### Lists
 
 ```swift
-Markdown(
+SwiftMarkdown(
   #"""
   List of humorous units of measurement:
 
@@ -215,12 +200,10 @@ Markdown(
 )
 ```
 
-![Lists](Images/List.1.png)
-
 ### Code Blocks
 
 ```swift
-Markdown(
+SwiftMarkdown(
   #"""
   Use a group to collect multiple views into a single instance,
   without affecting the layout of those views. After creating a
@@ -239,12 +222,10 @@ Markdown(
 )
 ```
 
-![Code blocks](Images/CodeBlock.1.png)
-
 ### Headings
 
 ```swift
-Markdown(
+SwiftMarkdown(
   #"""
   # Heading 1
   A paragraph of text.
@@ -258,12 +239,10 @@ Markdown(
 )
 ```
 
-![Headings](Images/Headings.1.png)
-
 ### Thematic Breaks
 
 ```swift
-Markdown(
+SwiftMarkdown(
   #"""
   # SwiftUI
 
@@ -284,12 +263,10 @@ Markdown(
 )
 ```
 
-![Thematic breaks](Images/ThematicBreak.1.png)
-
 ### Images
 
 ```swift
-Markdown(
+SwiftMarkdown(
   #"""
   ![Puppy](https://picsum.photos/id/237/200/300)
 
@@ -298,12 +275,10 @@ Markdown(
 )
 ```
 
-![Images](Images/Image.1.png)
-
 ### Emphasized Text
 
 ```swift
-Markdown(
+SwiftMarkdown(
   #"""
   It's very easy to make some words **bold** and other words *italic* with Markdown.
 
@@ -313,17 +288,16 @@ Markdown(
 )
 ```
 
-![Emphasized text](Images/EmphasizedText.1.png)
-
 ## Installation
 You can add MarkdownUI to an Xcode project by adding it as a package dependency.
 
 1. From the **File** menu, select **Add Packages…**
-1. Enter `https://github.com/gonzalezreal/MarkdownUI` into the *Search or Enter Package URL* search
+1. Enter `https://github.com/viere1234/SwiftMarkdownUI` into the *Search or Enter Package URL* search
    field
-1. Link **MarkdownUI** to your application target
+1. Link **SwiftMarkdownUI** to your application target
 
 ## Other Libraries
+* [MarkdownUI](https://github.com/gonzalezreal/MarkdownUI)
 * [CommonMarkAttributedString](https://github.com/mattt/CommonMarkAttributedString)
 * [Down](https://github.com/johnxnguyen/Down)
 * [AttributedText](https://github.com/gonzalezreal/AttributedText)
